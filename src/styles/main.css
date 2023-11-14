@@ -1,0 +1,63 @@
+.token-keyword {
+  color: blue;
+  /* text-transform: uppercase; */
+}
+
+.token-attribute {
+  color: rgb(146, 55, 55);
+  /* text-transform: uppercase; */
+  font-weight: 500;
+}
+
+.token-operator {
+  color: red;
+  /* text-transform: uppercase; */
+  font-weight: 600;
+}
+/* .custom-style{
+    display: flex;
+    flex-grow: 1;
+} */
+.vs .mtk6 {
+  color: #0000ff !important;
+  /* text-transform: uppercase !important  ; */
+}
+.vs .mtk7 {
+  color: #c90909 !important;
+}
+.vs-dark .mtk7 {
+  color: #608b4e !important;
+}
+.vs-dark .mtk8 {
+  color: #569cd6 !important;
+  /* text-transform: uppercase; */
+}
+.mtk14 {
+  color: rgb(175, 45, 158) !important;
+}
+.mtk15 {
+  color: rgb(119, 63, 119) !important;
+}
+.mtk22 {
+  color: #0000ff !important;
+}
+.vs .mtk23 {
+  color: #be3320 !important;
+}
+.vs-dark .mtk23 {
+  color: rgb(175, 99, 175) !important;
+}
+.mtk24 {
+  color: rgb(151, 143, 33) !important;
+}
+.table-row {
+  font-size: 9.5pt;
+  font-weight: 400;
+  /* font-family: monospace; */
+}
+.scroll-on-hover {
+  overflow: hidden;
+}
+.scroll-on-hover:hover {
+  overflow: auto;
+}
