@@ -1,26 +1,19 @@
-.token-keyword {
+/* .token-keyword {
   color: blue;
-  /* text-transform: uppercase; */
 }
 
 .token-attribute {
   color: rgb(146, 55, 55);
-  /* text-transform: uppercase; */
   font-weight: 500;
 }
 
 .token-operator {
   color: red;
-  /* text-transform: uppercase; */
   font-weight: 600;
-}
-/* .custom-style{
-    display: flex;
-    flex-grow: 1;
 } */
-.vs .mtk6 {
+
+/* .vs .mtk6 {
   color: #0000ff !important;
-  /* text-transform: uppercase !important  ; */
 }
 .vs .mtk7 {
   color: #c90909 !important;
@@ -30,7 +23,6 @@
 }
 .vs-dark .mtk8 {
   color: #569cd6 !important;
-  /* text-transform: uppercase; */
 }
 .mtk14 {
   color: rgb(175, 45, 158) !important;
@@ -42,22 +34,40 @@
   color: #0000ff !important;
 }
 .vs .mtk23 {
-  color: #be3320 !important;
+  color: #942011 !important;
 }
 .vs-dark .mtk23 {
   color: rgb(175, 99, 175) !important;
 }
+.vs .mtk25 {
+  color: #be3320 !important;
+}
+.vs-dark .mtk25 {
+  color: rgb(175, 99, 175) !important;
+}
 .mtk24 {
   color: rgb(151, 143, 33) !important;
-}
+} */
 .table-row {
   font-size: 9.5pt;
   font-weight: 400;
-  /* font-family: monospace; */
 }
 .scroll-on-hover {
   overflow: hidden;
 }
 .scroll-on-hover:hover {
   overflow: auto;
+}
+.fileviewer-table-row {
+  border: 1px solid red !important;
+  padding: 0 !important;
+}
+.selected-row {
+  background-color: #e6f4ff;
+}
+.selected-row-dark {
+  background-color: #bae0ff;
+}
+.ant-table-tbody > tr > td {
+  padding: 4px 4px;
 }

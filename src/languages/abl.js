@@ -6,34 +6,10 @@ import {
   keywords,
   keywordsDashed,
 } from "./kewords";
-import { tables, fields } from "../data/tradesys";
+
 var conf = {
   wordPattern:
     /(\d*\.\d\w*)|([^\`\~\!\@\#\%\^\&\*\(\)\=\+\-\[\{\]\}\\\|\;\:\'\"\,\.\<\>\/\?\s]+)/g,
-  comments: {
-    lineComment: "//",
-    blockComment: ["/*", "*/"],
-    // blockComment: "/\\/\\*[^]*?\\*\\/|\\*[^]*?\\*\\/",
-
-    // lineComment: "//",
-  },
-  brackets: [
-    ["{", "}"],
-    ["[", "]"],
-    ["(", ")"],
-    // [":", "end."],
-    // ["for ", "end."],
-    // ["then", ""],
-    // ["when", ""],
-    // ["assign", "."],
-    // ["temp-table", "."],
-    // ["function", "end function."],
-    // ["procedure", "end procedure."],
-    // ["finally", "end finally."],
-    // ["catch", "end catch."],
-    // ["case", "end case."],
-  ],
-
   autoClosingPairs: [
     { open: "{", close: "}" },
     { open: "[", close: "]" },
@@ -48,13 +24,36 @@ var conf = {
     // { open: "repeat ", close: "end.", notIn: ["string", "comment"] },
   ],
 
+  brackets: [
+    ["{", "}", "delimiter.curly"],
+    ["[", "]", "delimiter.square"],
+    ["(", ")", "delimiter.parenthesis"],
+    // [":", "end."],
+    // ["for ", "end."],
+    // ["then", ""],
+    // ["when", ""],
+    // ["assign", "."],
+    // ["temp-table", "."],
+    // ["function", "end function."],
+    // ["procedure", "end procedure."],
+    // ["finally", "end finally."],
+    // ["catch", "end catch."],
+    // ["case", "end case."],
+  ],
+  colorizedBracketPairs: [["{", "}"]],
+  comments: {
+    // lineComment: "//",
+    blockComment: ["/*", "*/"],
+  },
   surroundingPairs: [
-    ["{", "}"],
-    ["[", "]"],
-    ["(", ")"],
-    ['"', '"'],
-    ["'", "'"],
-    ["/*", "*/"],
+    { open: '"', close: '"' },
+    { open: "(", close: ")" },
+    { open: "{", close: "}" },
+    { open: "[", close: "]" },
+    { open: "'", close: "'" },
+    { open: "`", close: "`" },
+    { open: "/", close: "/" },
+    { open: "*", close: "*" },
   ],
   // folding: {
   //   markers: {
@@ -68,13 +67,13 @@ var conf = {
   //   decreaseIndentPattern: "\bend.|\bEND.|\bend |\bEND FINALLY.",
   // },
   indentationRules: {
-    increaseIndentPattern: new RegExp("^.+:\\s*$"),
-    decreaseIndentPattern: new RegExp("^\\s*end(\\.|\\s+.*\\.)$"),
+    increaseIndentPattern: new RegExp("^.+:\\s*$|assign", "i"),
+    decreaseIndentPattern: new RegExp("^\\s*end(\\.|\\s+.*\\.)$", "i"),
   },
   folding: {
     markers: {
-      start: new RegExp("^.+:\\s*$"),
-      end: new RegExp("^\\s*end(\\.|\\s+.*\\.)$"),
+      start: new RegExp("^.+:\\s*$", "i"),
+      end: new RegExp("^\\s*end(\\.|\\s+.*\\.)$", "i"),
     },
   },
   // folding: {
@@ -113,6 +112,9 @@ var language = {
   builtinVariables: [...builtinVariables],
   builtinFunctions: [...builtinFunctions],
   operators: [
+    "<",
+    ">",
+    "<>",
     "<=",
     ">=",
     "+",
@@ -170,8 +172,9 @@ var language = {
         /\/(?=([^\\\/]|\\.)+\/([dgimsuy]*)(\s*)(\.|;|,|\)|\]|\}|$))/,
         { token: "regexp", bracket: "@open", next: "@regexp" },
       ],
-      [/[()\[\]]/, "@brackets"],
+      [/[{}()\[\]]/, "@brackets"],
       [/[<>](?!@symbols)/, "@brackets"],
+      [/@symbols/, { cases: { "@operators": "operator", "@default": "" } }],
       [/!(?=([^=]|$))/, "delimiter"],
 
       [/(@digits)[eE]([\-+]?(@digits))?/, "number.float"],
@@ -248,23 +251,23 @@ var language = {
       ],
     ],
     string_double: [
-      [/[^\\"]+/, "string"],
+      [/[^\\"]+/, "string.quote"],
       [/@escapes/, "string.escape"],
       [/\\./, "string.escape.invalid"],
-      [/"/, "string", "@pop"],
+      [/"/, { token: "string.quote", bracket: "@close", next: "@pop" }],
     ],
     string_single: [
-      [/[^\\']+/, "string"],
+      [/[^\\']+/, "string.quote"],
       [/@escapes/, "string.escape"],
       [/\\./, "string.escape.invalid"],
-      [/'/, "string", "@pop"],
+      [/'/, { token: "string.quote", bracket: "@close", next: "@pop" }],
     ],
     string_backtick: [
       [/\$\{/, { token: "delimiter.bracket", next: "@bracketCounting" }],
-      [/[^\\`$]+/, "string"],
+      [/[^\\`$]+/, "string.quote"],
       [/@escapes/, "string.escape"],
       [/\\./, "string.escape.invalid"],
-      [/`/, "string", "@pop"],
+      [/`/, { token: "string.quote", bracket: "@close", next: "@pop" }],
     ],
     bracketCounting: [
       [/\{/, "delimiter.bracket", "@bracketCounting"],
@@ -273,15 +276,21 @@ var language = {
     ],
     numbers: [
       [/0[xX][0-9a-fA-F]*/, "number"],
-      [/[$][+-]*\d*(\.\d*)?/, "number"],
+      // [/[$][+-]*\d*(\.\d*)?/, "number"],
       [/((\d+(\.\d*)?)|(\.\d+))([eE][\-+]?\d+)?/, "number"],
     ],
     preproc: [
       // [/(?<!\w)&\w+[-]+\w+/, "variable.predefined"],
 
       // [/\{.*$/, "white"],
-      [/\&.*$/, "variable.predefined"],
+      [/\&analyze.*$/, "preproc"],
+      // [/\{/, "curlenclosed"],
+      // [/\}/, "curlenclosed"],
+      [/{([^}]*)}/, "curlenclosed"],
+      // [/([^\s]*)\/\w+\.\w+|([^\s]*)\/\w+/, "directory"],
       [/TEMP-TABLE/, "keyword"],
+      [/scoped-define/, "keyword"],
+      [/global-define/, "keyword"],
       [/@dashedKeywordsString/, "keyword"],
       [/@dashedPropertiesString/, "tag"],
       [/^(\s*)(@propertiesString)$/, "tag"],

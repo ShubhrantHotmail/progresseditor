@@ -1,6 +1,7 @@
 import axios from "axios";
 import { Button } from "antd";
-
+import { ENDPOINT } from "./endpoints";
+import "../App.css";
 const instance = axios.create({
   headers: {
     "Content-Type": "application/json",
@@ -138,6 +139,65 @@ async function login(params) {
     });
 
   return result;
+}
+
+export function download(props) {
+  const { fileName, fileContent } = props;
+  // const name = !fileName || fileName === "" ? "Untitled" : fileName;
+  const name =
+    !fileName || fileName === "" || fileName?.split("/")?.length === 0
+      ? "Untitled"
+      : fileName?.split("/")?.[fileName?.split("/")?.length - 1];
+  const element = document.createElement("a");
+  const tempFile = new Blob([fileContent], {
+    type: "text/plain",
+  });
+  element.href = URL.createObjectURL(tempFile);
+  element.download = name;
+  document.body.appendChild(element); // Required for this to work in FireFox
+  element.click();
+}
+
+export async function downloadAsync(fileName) {
+  /***
+   * @param {fileName: Full server path of the filename such as /path/to/file/filename}
+   * @invoke Invoke it with await by declaring its outer function as async
+   *         async function downloadFile(fileName) {
+   *           await saveToComputerAsync(fileName);
+   *         }
+   * @returns null
+   */
+  if (!fileName || fileName === "" || fileName?.split("/")?.length <= 1) {
+    console.error(
+      "Invalid file. File provided must have a path associated with it such as /var/tmp/myfile.txt"
+    );
+    return null;
+  }
+  document.body.classList.add("waiting");
+  // const { fileName, fileContent } = props;
+  const response = await Request({
+    url: ENDPOINT.getFileContentApi() + `?file=${fileName}`,
+  });
+
+  if (response?.type === "error") {
+    console.error(`File retrieve error from server: ${response?.message}`);
+    document.body.classList.remove("waiting");
+    return;
+  }
+  const fileContent = response?.data;
+  const name =
+    !fileName || fileName === "" || fileName?.split("/")?.length === 0
+      ? "Untitled"
+      : fileName?.split("/")?.[fileName?.split("/")?.length - 1];
+  const element = document.createElement("a");
+  const tempFile = new Blob([fileContent], {
+    type: "text/plain",
+  });
+  element.href = URL.createObjectURL(tempFile);
+  element.download = name;
+  document.body.appendChild(element); // Required for this to work in FireFox
+  element.click();
+  document.body.classList.remove("waiting");
 }
 
 export { Request, login };

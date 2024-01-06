@@ -1,7 +1,10 @@
 import React from "react";
+import { themePelette } from "./lib/theme";
 export const GlobalContext = React.createContext();
 
 export function GlobalContextProvider({ children }) {
+  const currentTheme = localStorage.getItem("theme") ?? "defaultLight";
+  // console.log("currentTheme", currentTheme);
   const initialState = {
     file: {
       originalContent: "",
@@ -13,6 +16,11 @@ export function GlobalContextProvider({ children }) {
     },
     fileOpenMode: "local",
     remoteFile: "",
+    saved: true,
+    fileState: "new",
+    theme: currentTheme,
+    themeTokens: themePelette?.[currentTheme],
+    fileList: [],
   };
 
   const reducer = (state, action) => {
@@ -31,6 +39,31 @@ export function GlobalContextProvider({ children }) {
         return {
           ...state,
           remoteFile: action?.value,
+        };
+      case "THEME":
+        return {
+          ...state,
+          theme: action?.value,
+        };
+      case "THEME_TOKENS":
+        return {
+          ...state,
+          themeTokens: action?.value,
+        };
+      case "FILE_STATE":
+        return {
+          ...state,
+          fileState: action?.value,
+        };
+      case "SAVED":
+        return {
+          ...state,
+          saved: action?.value,
+        };
+      case "FILE_LIST":
+        return {
+          ...state,
+          fileList: action?.value,
         };
       default:
         break;

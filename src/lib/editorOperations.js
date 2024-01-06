@@ -9,6 +9,7 @@ import {
   getAllVariables,
   getCurlyContent,
   getSourceCode,
+  getTempTables,
 } from "../parser/sourceParser";
 
 export function recordFileChange() {
@@ -53,7 +54,13 @@ export async function OpenFile(setFileHandle, setFile, setCode, payload) {
   }
 }
 
-export async function saveAsFile(setFileHandle, editor, state) {
+export async function saveAsFile(
+  setFileHandle,
+  editor,
+  setFile,
+  setCode,
+  payload
+) {
   try {
     const handle = await window.showSaveFilePicker();
     setFileHandle(handle);
@@ -61,13 +68,30 @@ export async function saveAsFile(setFileHandle, editor, state) {
     const writable = await handle.createWritable();
     await writable.write(editor?.getValue());
     await writable.close();
+
+    const fileDetail = await getFileText(handle);
+    setFile(fileDetail?.file?.name);
+    setCode(fileDetail?.contents);
+
+    if (payload) {
+      payload({ type: "FILE_OPEN_MODE", value: "local" });
+      payload({ type: "REMOTE_FILE", value: null });
+    }
   } catch (error) {
     console.error("Save AS", error);
   }
 }
 
-export async function saveFile(fileHandle, editor, state) {
-  console.log("SAVE", state);
+export async function saveFile(
+  setFileHandle,
+  fileHandle,
+  editor,
+  setFile,
+  setCode,
+  payload,
+  state
+) {
+  // console.log(state?.fileOpenMode, state?.remoteFile);
   if (state?.fileOpenMode !== "local" && state?.remoteFile) {
     const res = await Request({
       url: ENDPOINT.fileHandlerApi(),
@@ -89,9 +113,19 @@ export async function saveFile(fileHandle, editor, state) {
       });
       return;
     }
+    payload({ type: "SAVED", value: true });
+    const fileList = state?.fileList;
+
+    if (fileList) {
+      const obj = fileList?.find(
+        (item) => item?.filePath === state?.remoteFile
+      );
+      if (obj) obj.saved = true;
+      payload({ type: "FILE_LIST", value: fileList });
+    }
   } else {
     if (!fileHandle) {
-      saveAsFile(fileHandle, editor);
+      saveAsFile(setFileHandle, editor, setFile, setCode, payload);
       return;
     }
     window.onbeforeunload = null;
@@ -112,6 +146,7 @@ export function getCodeStructure(editor) {
   const ioParameters = getAllIOParameters(parsedCode, editor);
   const procedures = getAllProcedures(parsedCode, editor);
   const functions = getAllFunctions(parsedCode, editor);
+  const tempTables = getTempTables(parsedCode, editor);
   // const comments = getAllCommentedLines(parsedCode, editor);
   const curls = getCurlyContent(parsedCode, editor);
 
@@ -123,6 +158,7 @@ export function getCodeStructure(editor) {
     ioParameters,
     procedures,
     functions,
+    tempTables,
     decor,
   };
 }

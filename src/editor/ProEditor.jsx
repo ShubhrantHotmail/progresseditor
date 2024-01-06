@@ -5,6 +5,8 @@ import { useMonaco } from "@monaco-editor/react";
 import { setupABLLanguage, setupEditor } from "../lib/editorConfig";
 import { getFileText } from "../lib/editorOperations";
 import { GlobalContext } from "../GlobalContext";
+import { toggleCase, cleanupComments } from "../lib/newFormatter";
+import { setLanguageLog } from "../languages/log";
 
 export default function ProEditor(props) {
   var {
@@ -19,58 +21,53 @@ export default function ProEditor(props) {
     showMinimap,
     showRuler,
     rulerSize,
+    readOnly,
+    lineFunction,
     code,
     setMonaco,
     setEditor,
     setCode,
+    setFileText,
     setSelectedText,
     setCursorPosition,
     setFile,
     fileHandle,
     setFileHandle,
     setStructure,
+    firstLineNumber,
   } = props;
 
   var containerId = Math.random().toString(16).slice(2);
   const [state, payload] = React.useContext(GlobalContext);
   const [monacoEditor, setMonacoEditor] = React.useState(null);
-  // const [code, setCode] = React.useState("");
+  const editorTheme = localStorage.getItem("theme");
+  const themeTokens = localStorage.getItem("themeTokens");
   const editorRef = React.useRef();
-  var editorComponent;
+
   try {
     var monaco = useMonaco();
-    // console.log(monaco.KeyCode);
   } catch (error) {
     console.error("Monaco Error:", error);
   }
 
   React.useEffect(() => {
+    console.log("UseEffect:", firstLineNumber);
+    // if (firstLineNumber !== 0 && monaco) {
+    //   console.log(editor.LineNumbersType, lineFunction);
+    //   editor.LineNumbersType = lineFunction;
+    //   return;
+    // }
     if (monaco) {
-      setupABLLanguage(monaco);
+      const allLangs = monaco?.languages?.getLanguages();
+      if (!allLangs.find((lang) => lang?.id === "abl"))
+        setupABLLanguage(monaco);
+      if (!allLangs.find((lang) => lang?.id === "log")) setLanguageLog(monaco);
       setMonaco(monaco);
 
-      monaco.editor.defineTheme("myTheme", {
-        base: "vs",
-        inherit: true,
-        rules: [],
-        colors: {
-          "editor.foreground": "#000000",
-          "editor.background": "#FFFFFF",
-          "editorCursor.foreground": "#8B0000",
-          "editor.lineHighlightBackground": "#EFF5FC",
-          "editorLineNumber.foreground": "#848484",
-          "editorLineNumber.activeForeground": "#C30615",
-          "editorLineNumber.activeBackground": "#EFF5FC",
-          "editor.selectionBackground": "#0080ff66",
-          "editor.inactiveSelectionBackground": "#88000015",
-          // "editorIndentGuide.background": "#000000",
-        },
-      });
-      monaco.editor.setTheme("myTheme");
+      // console.log(monaco?.languages?.getLanguages());
       var editor = monaco.editor.create(document.getElementById(containerId), {
         height: height ?? "100vh",
-        // theme: theme ?? "vs",
-        language: lang ?? "abl",
+        language: lang ?? "plaintext",
         fontSize: fontSize ?? "13px",
         fontFamily: fontFamily ?? "Monospace",
         automaticLayout: true,
@@ -85,28 +82,85 @@ export default function ProEditor(props) {
         rulers: showRuler && rulerSize ? [rulerSize] : [],
         scrollBeyondLastLine: false,
         extraEditorClassName: "custom-style",
-        readOnly: false,
+        readOnly: readOnly,
+        lineNumbers: lineFunction ?? "on",
+        lineNumbersMinChars: 0,
       });
 
+      const tokens = themeTokens ? JSON.parse(themeTokens) : state?.themeTokens;
+      if (monaco) {
+        monaco.editor.defineTheme("myTheme", tokens);
+        monaco.editor.setTheme("myTheme");
+      }
+      if (lang === "abl") {
+        editor.addAction({
+          id: "id__format__code",
+          label: "Format Code",
+          keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyI],
+          precondition: null,
+          keybindingContext: null,
+          contextMenuGroupId: "formatting",
+          contextMenuOrder: 0,
+          run: () => editor.getAction("editor.action.formatDocument").run(),
+        });
+
+        editor.addAction({
+          id: "id__keyword__upper__case",
+          label: "Change Keyword Upper Case",
+          keybindings: [
+            monaco.KeyMod.Alt | monaco.KeyMod.Shift | monaco.KeyCode.KeyU,
+          ],
+          precondition: null,
+          keybindingContext: null,
+          contextMenuGroupId: "formatting",
+          contextMenuOrder: 1,
+          run: () => toggleCase(monaco, editor, "upper"),
+        });
+        editor.addAction({
+          id: "id__keyword__lower__case",
+          label: "Change Keyword Lower Case",
+          keybindings: [
+            monaco.KeyMod.Alt | monaco.KeyMod.Shift | monaco.KeyCode.KeyL,
+          ],
+          precondition: null,
+          keybindingContext: null,
+          contextMenuGroupId: "formatting",
+          contextMenuOrder: 2,
+          run: () => toggleCase(monaco, editor, "lower"),
+        });
+        editor.addAction({
+          id: "id__keyword__remove_comments",
+          label: "Cleanup Comments",
+          keybindings: [
+            monaco.KeyMod.Alt | monaco.KeyMod.Shift | monaco.KeyCode.KeyC,
+          ],
+          precondition: null,
+          keybindingContext: null,
+          contextMenuGroupId: "formatting",
+          contextMenuOrder: 3,
+          run: () => cleanupComments(monaco, editor),
+        });
+      }
       setEditor(editor);
       setMonacoEditor(editor);
       editorRef.current = editor;
       ref = editorRef.current;
 
-      setupEditor({
-        monaco,
-        editor,
-        code,
-        setCode,
-        setCursorPosition,
-        setSelectedText,
-        fileHandle,
-        setFileHandle,
-        setFile,
-        payload,
-        state,
-        setStructure,
-      });
+      // setupEditor({
+      //   monaco,
+      //   editor,
+      //   code,
+      //   setCode,
+      //   setFileText,
+      //   setCursorPosition,
+      //   setSelectedText,
+      //   fileHandle,
+      //   setFileHandle,
+      //   setFile,
+      //   payload,
+      //   state,
+      //   setStructure,
+      // });
     }
   }, [monaco]);
 
@@ -115,12 +169,13 @@ export default function ProEditor(props) {
       ? await getFileText(fileHandle)
       : { contents: code };
 
-    if (fileHandle && monacoEditor)
+    if (fileHandle && monacoEditor) {
       setupEditor({
         monaco,
         editor: monacoEditor,
         code: fileDetail?.contents,
         setCode,
+        setFileText,
         setCursorPosition,
         setSelectedText,
         fileHandle,
@@ -130,32 +185,26 @@ export default function ProEditor(props) {
         state,
         setStructure,
       });
+
+      localStorage.setItem("original", fileDetail?.contents);
+      console.log(monaco.editor.tokenize(fileDetail?.contents, "log"));
+    }
   };
 
   React.useEffect(() => {
+    console.log("UseEffect: 2");
     showFileData(fileHandle);
-  }, [state, fileHandle]);
+    // console.log(state);
+  }, [fileHandle]);
 
-  // React.useEffect(() => {
-
-  //   if (monacoEditor && state?.fileOpenMode !== "local") {
-  //     console.log(state?.fileOpenMode);
-  //     setupEditor({
-  //       monaco,
-  //       editor: monacoEditor,
-  //       code: code,
-  //       setCode,
-  //       setCursorPosition,
-  //       setSelectedText,
-  //       fileHandle: null,
-  //       setFileHandle,
-  //       setFile,
-  //       payload,
-  //       state,
-  //       setStructure,
-  //     });
-  //   }
-  // }, [state]);
+  React.useEffect(() => {
+    console.log("UseEffect: 3");
+    const tokens = themeTokens ? JSON.parse(themeTokens) : state?.themeTokens;
+    if (monaco) {
+      monaco.editor.defineTheme("myTheme", tokens);
+      monaco.editor.setTheme("myTheme");
+    }
+  }, [editorTheme]);
 
   return (
     <div
@@ -164,7 +213,6 @@ export default function ProEditor(props) {
         height: height ?? "100vh",
         width: "100%",
         textAlign: "left",
-        // position: "absolute",
         display: "flex",
         flexGrow: 1,
       }}

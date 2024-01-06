@@ -8,6 +8,8 @@ import {
   Input,
   Typography,
   Tag,
+  Button,
+  Divider,
 } from "antd";
 import "./style.css";
 import {
@@ -19,10 +21,29 @@ import {
   Server,
 } from "../lib/Symbols";
 import { GlobalContext } from "../GlobalContext";
+import { theme } from "antd";
+import ThemeChanger from "./ThemeChanger";
+
+const { useToken } = theme;
 
 export default function EditorFooter(props) {
-  const { position, editorProps, callback, file } = props;
+  const { token } = useToken();
+  const {
+    position,
+    editorProps,
+    callback,
+    file,
+    size,
+    codeList,
+    setCodeList,
+    currentIndex,
+    showThemeChanger,
+    showFileDetails,
+  } = props;
   const [state, payload] = React.useContext(GlobalContext);
+  const [filename, setFilename] = React.useState(file);
+  const originalCode = localStorage.getItem("original");
+
   const fonts = [
     { label: "Courier New", value: "Courier New" },
     { label: "Monospace", value: "Monospace" },
@@ -33,13 +54,16 @@ export default function EditorFooter(props) {
   const langs = [
     { label: "Progress 4GL", value: "abl" },
     { label: "Plain Text", value: "plaintext" },
+    { label: "Java", value: "java" },
+    { label: "C Lang", value: "c" },
     { label: "Javascript", value: "javascript" },
     { label: "JSON", value: "json" },
-    { label: "XML", value: "xml" },
+    { label: "XML", value: "html" },
     { label: "HTML", value: "html" },
     { label: "Shell Script", value: "shell" },
     { label: "Python", value: "python" },
-    { label: "Log File", value: "restructuredtext" },
+    { label: "Log File", value: "log" },
+    { label: "INI File", value: "ini" },
   ];
 
   const sizes = [
@@ -81,21 +105,47 @@ export default function EditorFooter(props) {
     }
   };
 
+  React.useEffect(() => {
+    console.log("UseEffect", state, file);
+    if (state?.saved === false) setFilename(file + "*");
+    else setFilename(file);
+
+    const obj = codeList?.find((item) => item?.fileIndex === currentIndex);
+    if (obj) obj.saved = state?.saved;
+    setCodeList([...codeList]);
+  }, [state?.saved, state?.remoteFile]);
+
   return (
-    <div className="footer">
+    <div
+      className="footer"
+      style={{
+        backgroundColor: `${token.colorBgLayout}`,
+        borderTop: `1px solid ${token.colorBorder}`,
+      }}
+    >
       <Row>
-        <Col span={8} style={{ textAlign: "left" }}>
-          <Space>
-            <FileTypeTag mode={state?.fileOpenMode} />
-            <Typography.Text style={{ fontSize: 12 }} strong>
-              {file}
-            </Typography.Text>
-          </Space>
+        <Col span={12} style={{ textAlign: "left" }}>
+          {showFileDetails === true && (
+            <Space>
+              <FileTypeTag mode={state?.fileOpenMode} />
+              <Typography.Text style={{ fontSize: 12 }} strong>
+                {filename}
+              </Typography.Text>
+              <Divider type="vertical" />
+              <Typography.Text style={{ fontSize: 12 }} strong>
+                Size: {size}
+              </Typography.Text>
+            </Space>
+          )}
         </Col>
-        <Col span={8} style={{ textAlign: "right", fontSize: 11 }}>
+        <Col span={4} style={{ textAlign: "right", fontSize: 11 }}>
           <Space>
-            <span>{`Line ${position.lineNumber}, `}</span>
-            <span>{`Col ${position.column}`}</span>
+            <span
+              style={{ color: token.colorText }}
+            >{`Line ${position.lineNumber}, `}</span>
+            <span
+              style={{ color: token.colorText }}
+            >{`Col ${position.column}`}</span>
           </Space>
         </Col>
         <Col span={8} style={{ textAlign: "right", fontSize: 11 }}>
@@ -133,6 +183,12 @@ export default function EditorFooter(props) {
               onChange={(value) => callback && callback("fontsize", value)}
               suffixIcon={null}
             />
+            {showThemeChanger === true && (
+              <ThemeChanger
+                bordered={false}
+                style={{ width: 140, textAlign: "left" }}
+              />
+            )}
           </Space>
         </Col>
       </Row>

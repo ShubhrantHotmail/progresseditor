@@ -1,6 +1,8 @@
 {
-  "name": "http://tisdev/apps/pro4gleditor",
-  "version": "0.1.0",
+  "homepage": "http://tisdev/apps/proeditor",
+  "name": "progresseditor",
+  "description": "Progress OpenEdge web editor with integration of local, remote and roundtable",
+  "version": "0.1.2",
   "private": true,
   "dependencies": {
     "@emotion/react": "^11.11.1",
@@ -22,11 +24,16 @@
     "react-app-menu": "^1.0.11",
     "react-app-rewired": "^2.2.1",
     "react-dom": "^18.2.0",
+    "react-jss": "^10.10.0",
+    "react-router-dom": "^6.21.0",
     "react-scripts": "5.0.1",
     "react-split-pane": "^2.0.3",
     "react-split-pane-v2": "^1.0.3",
     "sql-formatter": "^13.0.0",
-    "web-vitals": "^2.1.4"
+    "styled-components": "^6.1.1",
+    "web-vitals": "^2.1.4",
+    "webpack": "^5.89.0",
+    "webpack-dev-server": "^4.15.1"
   },
   "scripts": {
     "start": "set PORT=4040 && cross-env react-app-rewired start",

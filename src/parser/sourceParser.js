@@ -398,7 +398,7 @@ export function getAllFunctions(sourceCode, editor) {
         }
         // tslint:disable-next-line:no-empty
       } catch (err) {
-        console.log(err);
+        console.error(err);
       } // suppress errors
       resStart = regexStart.exec(text);
     } else {
@@ -476,36 +476,81 @@ export function getCurlyContent(sourceCode, editor) {
   return result;
 }
 
-export function getAssignPos(sourceCode, editor) {
+export function getTempTables(sourceCode, editor) {
   let open = 0;
   let close = 0;
-  const regex = new RegExp(/(.*)(?=\=)/, "gm");
+  const regex = new RegExp(
+    /(?:def|define)(?:[\s\t\n]|new|shared)+(?:temp-table)(?:[\s\t\n]+)([\w\d\-]+)[\s\t\n]/,
+    "gim"
+  );
   let res = regex.exec(sourceCode.fullSource);
+  let idx = 0;
   const result = [];
-  // console.log(res);
-  // while (res) {
-  //   // if (res[0] === "{") {
-  //   //   open += 1;
-  //   //   const pos = editor.getModel().getPositionAt(res.index);
-  //   //   result.push({
-  //   //     class: "curly",
-  //   //     index: open,
-  //   //     startLineNumber: pos.lineNumber,
-  //   //     startColumn: pos.column,
-  //   //   });
-  //   // }
+  while (res) {
+    const pos = editor.getModel().getPositionAt(res.index);
+    idx += 1;
+    result.push({
+      class: "temptable",
+      index: idx,
+      name: res?.[1],
+      line: pos,
+      startLineNumber: pos.lineNumber,
+      startColumn: pos.column,
+      fields: [],
+    });
+    res = regex.exec(sourceCode.fullSource);
+  }
 
-  //   // if (res[0] === "}") {
-  //   //   close += 1;
-  //   //   const obj = result.find((item) => item.index === close);
-  //   //   if (obj) {
-  //   //     const pos = editor.getModel().getPositionAt(res.index);
-  //   //     obj.endLineNumber = pos.lineNumber;
-  //   //     obj.endColumn = pos.column + 2;
-  //   //   }
-  //   // }
-  //   console.log(res);
-  //   res = regex.exec(sourceCode.fullSource);
-  // }
+  idx = 0;
+  const code = sourceCode.fullSource.split("\n");
+  for (let i = 0; i < code.length; i++) {
+    const line = code[i];
+    const cleanLine = line?.toLowerCase()?.trim();
+
+    // console.log(cleanLine);
+
+    if (
+      (cleanLine.startsWith("def") || cleanLine.startsWith("define")) &&
+      cleanLine.indexOf("temp-table") > -1
+    )
+      idx += 1;
+
+    if (cleanLine.startsWith("field") || cleanLine.startsWith("fields")) {
+      const fieldExp = new RegExp(
+        /(?:field|fields){1}(?:[\s\t\n]+)([\w\d\-]+)[\s\t\n]+(as|like){1}[\s\t\n]+([\w\d\-\.]+)([\n\s\t\w\d\-\'\"]*)/,
+        "i"
+      );
+      const obj = result.find((item) => item.index === idx);
+      // console.log(obj);
+      const field = fieldExp.exec(cleanLine);
+      if (obj) obj.fields?.push({ name: field?.[1], dataType: field?.[3] });
+    }
+  }
+
+  // console.log(result);
   return result;
 }
+
+export const getComments = (sourceCode, model) => {
+  const regex = new RegExp(
+    /\/\*([^*]|[\r\n]|(\*+([^*/]|[\r\n])))*\*+\//,
+    "gim"
+  );
+  let res = regex.exec(sourceCode);
+  let idx = 0;
+  const result = [];
+  while (res) {
+    const pos = model.getPositionAt(res.index);
+    idx += 1;
+    result.push({
+      class: "comment",
+      index: idx,
+      name: res?.[0],
+      line: pos,
+      expIndex: res?.index,
+    });
+    res = regex.exec(sourceCode);
+  }
+
+  return result;
+};
